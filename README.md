@@ -1,6 +1,6 @@
 # TableViewWithDownloadProgress
 TableView with file's download progress. For downloaing file, I have used AFNetworking but you can NSURLConnection or NSURLSession
 
-![alt tag](https://raw.github.com/usafecase123/TableViewWithDownloadProgress/screen/1.png)
+![Screen1](https://github.com/safecase123/TableViewWithDownloadProgress/blob/master/Screen/1.png)
 
-![alt tag](https://raw.github.com/usafecase123/TableViewWithDownloadProgress/screen/2.png)
+![Screen2](https://github.com/safecase123/TableViewWithDownloadProgress/blob/master/Screen/2.png)
