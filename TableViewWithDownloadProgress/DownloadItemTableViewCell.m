@@ -120,10 +120,14 @@
         //NSLog(@"%@",_item.downloadTask);
         if(_item.downloadTask.state == NSURLSessionTaskStateRunning)
         {
+            [_progressView downloadPaused];
+            
             [_item.downloadTask suspend];
         }
         else if(_item.downloadTask.state == NSURLSessionTaskStateSuspended)
         {
+            [_progressView downloadStarted];
+            
             [_item.downloadTask resume];
         }
     }

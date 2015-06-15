@@ -12,7 +12,6 @@
 @property (nonatomic, strong) CAShapeLayer *progressBackgroundLayer;
 @property (nonatomic, strong) CAShapeLayer *progressLayer;
 @property (nonatomic, strong) CAShapeLayer *iconLayer;
-
 @property (nonatomic, assign) BOOL isSpinning;
 @end
 
@@ -135,8 +134,10 @@
         [self drawTick];
     } else if (([self progress] > 0) && [self progress] < 1.0) {
         
-        if (!_hideProgressIcons)
+        if (!_hideProgressIcons && !_isDownloadPaused)
             [self drawStop];
+        else
+            [self drawPlay];
         
     } else {
         if (!self.iconView && !self.iconPath)
@@ -266,6 +267,28 @@
     _iconLayer.fillColor = nil;
 }
 
+- (void) drawPlay
+{
+    CGFloat radius = (self.bounds.size.width)/2;
+    CGFloat ratio = 0.5;
+    CGFloat sideSize = self.bounds.size.width * ratio;
+    
+    UIBezierPath *playPath = [UIBezierPath bezierPath];
+    [playPath moveToPoint:CGPointMake(0, 0)];
+    [playPath addLineToPoint:CGPointMake(0.0,sideSize)];
+    [playPath addLineToPoint:CGPointMake(sideSize/2, sideSize/2)];
+    [playPath closePath];
+    
+    // ...and move it into the right place.
+    [playPath applyTransform:CGAffineTransformMakeTranslation(sideSize /3.0, 0)];
+    [playPath applyTransform:CGAffineTransformMakeTranslation(radius * (1-ratio), radius* (1-ratio))];
+    
+    [_iconLayer setPath:playPath.CGPath];
+    [_iconLayer setStrokeColor:_progressLayer.strokeColor];
+    [_iconLayer setFillColor:self.tintColor.CGColor];
+}
+
+
 #pragma mark Setters
 
 - (void)setProgress:(CGFloat)progress {
@@ -320,6 +343,21 @@
     
     [_progressBackgroundLayer removeAllAnimations];
     self.isSpinning = NO;
+}
+
+#pragma mark - Status
+
+-(void)downloadPaused
+{
+    _isDownloadPaused = YES;
+    
+    [self setNeedsDisplay];
+}
+-(void)downloadStarted
+{
+    _isDownloadPaused = NO;
+    
+    [self setNeedsDisplay];
 }
 
 @end

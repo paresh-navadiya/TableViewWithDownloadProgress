@@ -31,7 +31,7 @@
     for (int i = 0; i < 50; i++) {
         DownloadItem *item = [[DownloadItem alloc] init];
         item.strFileName = [NSString stringWithFormat:@"sample_iTunes.mov.zip %d", i];
-        item.strFileSize = @"00:00 MB";
+        item.strFileSize = @"-.-";
         item.strFileCreatedDate = @"2015-06-11";
         item.strFileDownloadURL = @"http://a1408.g.akamai.net/5/1408/1388/2005110403/1a1a1ad948be278cff2d96046ad90768d848b41947aa1986/sample_iTunes.mov.zip";
         

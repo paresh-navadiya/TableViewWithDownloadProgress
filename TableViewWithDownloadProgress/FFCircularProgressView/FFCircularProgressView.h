@@ -47,6 +47,8 @@
  */
 @property (readwrite) BOOL hideProgressIcons;
 
+@property (readwrite) BOOL isDownloadPaused;
+
 /**
  * Make the background layer to spin around its center. This should be called in the main thread.
  */
@@ -57,5 +59,8 @@
  * WARN: This implementation remove all animations from background layer.
  **/
 - (void) stopSpinProgressBackgroundLayer;
+
+-(void)downloadPaused;
+-(void)downloadStarted;
 
 @end
