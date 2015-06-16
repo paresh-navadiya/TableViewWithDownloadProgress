@@ -15,6 +15,7 @@
 - (void)didUpdateProgress:(CGFloat)progress;
 - (void)didFinishDownload;
 - (void)didFailDownload;
+-(void)didHaveToWaitDownload;
 
 @end
 
@@ -29,9 +30,12 @@
 @property (nonatomic, strong) NSURLSessionDownloadTask *downloadTask;
 @property (nonatomic, strong) id<ItemDownloadDelegate> delegate;
 
-- (void)downloadItem;
 - (BOOL)isDownloading;
 - (BOOL)isDownloaded;
+- (BOOL)isDownloadedQueued;
 - (CGFloat)progress;
 
+- (void)downloadItem;
+-(void)waitDownloadItem;
+-(void)startDownloadItem;
 @end

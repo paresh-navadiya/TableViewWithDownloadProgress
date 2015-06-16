@@ -13,8 +13,8 @@
 @implementation DownloadItem {
     BOOL _downloaded;
     BOOL _downloading;
+    BOOL _downloadedQueued;
     CGFloat _progress;
-    NSTimer *_downloadTimer;
 }
 
 - (id)init {
@@ -22,18 +22,25 @@
     if (self) {
         _downloaded = NO;
         _downloading = NO;
+        _downloadedQueued = NO;
         _progress = 0.0;
     }
     
     return self;
 }
 
-- (BOOL)isDownloaded {
+- (BOOL)isDownloaded
+{
     return _downloaded;
 }
 
 - (BOOL)isDownloading {
     return _downloading;
+}
+
+- (BOOL)isDownloadedQueued
+{
+    return _downloadedQueued;
 }
 
 - (CGFloat)progress {
@@ -42,6 +49,7 @@
 
 -(void)downloadItem
 {
+    _downloadedQueued = NO;
     _downloading = YES;
     // Simulate network activity
     if (_delegate) {
@@ -75,19 +83,24 @@
             
                 if (_delegate)
                     [_delegate didFinishDownload];
+                
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"downloadStatusNotification" object:[NSDictionary dictionaryWithObjectsAndKeys:self,@"DownloadItem",nil]];
             });
         }
         else
         {
-            // Completed
+            //Un Completed
             dispatch_async(dispatch_get_main_queue(), ^{
                 _downloading = NO;
                 _downloaded = NO;
                 
                 if (_delegate)
                     [_delegate didFailDownload];
+                
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"downloadStatusNotification" object:[NSDictionary dictionaryWithObjectsAndKeys:self,@"DownloadItem",nil]];
             });
         }
+
 #pragma clang diagnostic pop
 
     }];
@@ -113,6 +126,30 @@
 #pragma clang diagnostic pop
          
      }];
+    
+    [_downloadTask resume];
+}
+
+-(void)waitDownloadItem
+{
+    _downloadedQueued = YES;
+    _downloading = NO;
+    // Simulate UI
+    if (_delegate)
+    {
+        _progress = 0.000000000001;
+        [_delegate didHaveToWaitDownload];
+    }
+}
+
+-(void)startDownloadItem
+{
+    _downloadedQueued =  NO;
+    _downloading = YES;
+    // Simulate network activity
+    if (_delegate) {
+        [_delegate didStartDownloading];
+    }
     
     [_downloadTask resume];
 }

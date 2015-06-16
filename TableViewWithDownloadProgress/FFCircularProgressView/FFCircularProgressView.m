@@ -130,16 +130,20 @@
     
     [_progressLayer setPath:processPath.CGPath];
     
-    if ([self progress] == 1.0) {
+    if ([self progress] == 1.0)
+    {
         [self drawTick];
-    } else if (([self progress] > 0) && [self progress] < 1.0) {
+    }
+    else if (([self progress] > 0) && [self progress] < 1.0) {
         
         if (!_hideProgressIcons && !_isDownloadPaused)
             [self drawStop];
         else
             [self drawPlay];
         
-    } else {
+    }
+    else
+    {
         if (!self.iconView && !self.iconPath)
         {
             if (!_hideProgressIcons)

@@ -24,6 +24,9 @@
     [_progressView addGestureRecognizer:tapGesture];
 }
 
+#pragma mark -
+#pragma mark - ItemDownloadDelegate
+
 - (void)didStartDownloading
 {
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -54,14 +57,25 @@
 
 - (void)gotFileSize:(NSString *)strFileSize
 {
-   _lblFileSize.text = [self transformedValue:strFileSize];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        _lblFileSize.text = [self transformedValue:strFileSize];
+    });
+   
 }
 
+-(void)didHaveToWaitDownload
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        _progressView.progress = _item.progress;
+        [_progressView downloadPaused];
+    });
+}
+
+#pragma mark -
+#pragma mark - Methods
 - (void)setupUI
 {
-    //_progressView.hidden = ![_item isDownloading];
-    _progressView.progress = _item.progress;
-    
     if ([_item isDownloading])
     {
         if (_item.progress == 0)
@@ -70,6 +84,8 @@
             [_progressView stopSpinProgressBackgroundLayer];
             
         _lblFileName.text = [NSString stringWithFormat:@"%@", _item.strFileName];
+        
+        _progressView.isDownloadPaused = NO;
     }
     else if ([_item isDownloaded])
     {
@@ -82,7 +98,15 @@
         _lblFileName.text = _item.strFileName;
         _lblFileCreated.text = _item.strFileCreatedDate;
         _lblFileSize.text = _item.strFileSize;
+        
+        if ([_item isDownloadedQueued])
+        {
+            _progressView.isDownloadPaused = YES;
+        }
     }
+    
+    _progressView.progress = _item.progress;
+
 }
 
 - (void)setItem:(DownloadItem *)item {
@@ -111,6 +135,7 @@
     return [NSString stringWithFormat:@"%4.2f %@",convertedValue, [tokens objectAtIndex:multiplyFactor]];
 }
 
+#pragma mark -
 #pragma mark - gesture methods
 
 - (void)tapGestureSelector:(UITapGestureRecognizer *)recognizer

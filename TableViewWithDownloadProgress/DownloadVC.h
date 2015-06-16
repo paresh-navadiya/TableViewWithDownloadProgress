@@ -9,5 +9,8 @@
 #import <UIKit/UIKit.h>
 
 @interface DownloadVC : UIViewController <UITableViewDataSource,UITableViewDelegate>
-
+{
+    BOOL isAnyDownloadStarted;
+    NSMutableArray *mutArrQueueDownloadList;
+}
 @end
