@@ -7,8 +7,6 @@
 //
 
 #import "DownloadItem.h"
-#import "AFNetworking.h"
-
 
 @implementation DownloadItem {
     BOOL _downloaded;
@@ -57,30 +55,21 @@
     }
     
     //Downlaod File
-    NSURL *fileURL = [NSURL URLWithString:_strFileDownloadURL];
-    NSURLRequest *request = [NSURLRequest requestWithURL:fileURL];
+    _request = [STHTTPRequest requestWithURLString:_strFileDownloadURL];
     
-    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
-    AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:configuration];
-    
-    _downloadTask = [manager downloadTaskWithRequest:request progress:nil destination:^NSURL *(NSURL *targetPath, NSURLResponse *response)
+    //completion data block
+    _request.completionDataBlock = ^(NSDictionary *headers, NSData *downloadedData)
     {
-        [_fileDownloadedPathURL setResourceValue: [NSNumber numberWithBool:YES] forKey:NSURLIsExcludedFromBackupKey error:nil];
-        return _fileDownloadedPathURL;
-    }
-    completionHandler:^(NSURLResponse *response, NSURL *filePath, NSError *error)
-    {
-        NSLog(@"File downloaded to: %@", filePath);
-        
+        // Completion Block
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
-        if (!error)
+        if (downloadedData)
         {
             // Completed
             dispatch_async(dispatch_get_main_queue(), ^{
                 _downloading = NO;
                 _downloaded = YES;
-            
+                
                 if (_delegate)
                     [_delegate didFinishDownload];
                 
@@ -100,34 +89,63 @@
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"downloadStatusNotification" object:[NSDictionary dictionaryWithObjectsAndKeys:self,@"DownloadItem",nil]];
             });
         }
-
+        
 #pragma clang diagnostic pop
-
-    }];
+        
+    };
     
-    [manager setDownloadTaskDidWriteDataBlock:^(NSURLSession *session, NSURLSessionDownloadTask *downloadTask, int64_t bytesWritten, int64_t totalBytesWritten, int64_t totalBytesExpectedToWrite)
-     {
-
+    //download progress
+    _request.downloadProgressBlock = ^(NSData *dataJustReceived, int64_t totalBytesReceived, int64_t totalBytesExpectedToReceive)
+    {
+        // notify user of download progress
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
-
-         _progress = (float)totalBytesWritten / totalBytesExpectedToWrite;
-         NSLog(@"%f",_progress);
-         
-         dispatch_async(dispatch_get_main_queue(), ^{
-             if (_delegate)
-                 [_delegate didUpdateProgress:_progress];
-             
-             if (_delegate)
-                 [_delegate gotFileSize:[NSString stringWithFormat:@"%f",(float)totalBytesExpectedToWrite]];
-             
-         });
-         
+        
+        NSString *strCurFileSize = [NSString stringWithFormat:@"%f",(float)totalBytesExpectedToReceive];
+        self.strFileSize = [self transformedValue:strCurFileSize];
+        
+        _progress = (float)totalBytesReceived / totalBytesExpectedToReceive;
+        NSLog(@"%f",_progress);
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (_delegate)
+                [_delegate didUpdateProgress:_progress];
+        });
+        
 #pragma clang diagnostic pop
-         
-     }];
+        
+    };
     
-    [_downloadTask resume];
+    //error block
+    _request.errorBlock = ^(NSError *error) {
+        // error
+        NSLog(@"%@",[error description]);
+        
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-retain-cycles"
+        
+        //Un Completed
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _downloading = NO;
+            _downloaded = NO;
+            
+            _progress = 0.f;
+            
+            if (_delegate)
+            {
+                [_delegate didUpdateProgress:_progress];
+                [_delegate didFailDownload];
+            }
+            
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"downloadStatusNotification" object:[NSDictionary dictionaryWithObjectsAndKeys:self,@"DownloadItem",nil]];
+        });
+        
+#pragma clang diagnostic pop
+        
+    };
+    
+    //start request
+    [_request startAsynchronous];
 }
 
 -(void)waitDownloadItem
@@ -152,6 +170,21 @@
     }
     
     [_downloadTask resume];
+}
+
+-(NSString *)transformedValue:(id)value
+{
+    double convertedValue = [value doubleValue];
+    int multiplyFactor = 0;
+    
+    NSArray *tokens = [NSArray arrayWithObjects:@"bytes",@"KB",@"MB",@"GB",@"TB",nil];
+    
+    while (convertedValue > 1024) {
+        convertedValue /= 1024;
+        multiplyFactor++;
+    }
+    
+    return [NSString stringWithFormat:@"%4.2f %@",convertedValue, [tokens objectAtIndex:multiplyFactor]];
 }
 
 @end

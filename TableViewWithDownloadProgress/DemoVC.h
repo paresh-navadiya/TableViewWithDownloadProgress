@@ -10,7 +10,6 @@
 
 @interface DemoVC : UIViewController
 {
-    
 }
 
 -(IBAction)btnShowDownloadListAction:(id)sender;

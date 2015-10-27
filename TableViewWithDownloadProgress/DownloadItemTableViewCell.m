@@ -6,6 +6,7 @@
 //  Copyright (c) 2015 India. All rights reserved.
 //
 
+
 #import "DownloadItemTableViewCell.h"
 
 @interface DownloadItemTableViewCell () <ItemDownloadDelegate>
@@ -19,56 +20,52 @@
     [super awakeFromNib];
     
     [self setupUI];
-    
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureSelector:)];
-    [_progressView addGestureRecognizer:tapGesture];
 }
 
 #pragma mark -
 #pragma mark - ItemDownloadDelegate
 
-- (void)didStartDownloading
+-(void)didStartDownloading
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        self.btnStatus.hidden = NO;
+        self.btnStatus.selected = NO;
+        [self.btnStatus setImage:[UIImage imageNamed:@"cancel"] forState:UIControlStateNormal];
+        
+        [self setupUI];
+    });
+}
+
+-(void)didUpdateProgress:(CGFloat)progress
 {
     dispatch_async(dispatch_get_main_queue(), ^{
         [self setupUI];
     });
 }
 
-- (void)didUpdateProgress:(CGFloat)progress
+-(void)didFinishDownload
 {
     dispatch_async(dispatch_get_main_queue(), ^{
         [self setupUI];
     });
 }
 
-- (void)didFinishDownload
+-(void)didFailDownload
 {
     dispatch_async(dispatch_get_main_queue(), ^{
+        
+        self.btnStatus.selected = YES;
+        [self.btnStatus setImage:[UIImage imageNamed:@"refresh"] forState:UIControlStateNormal];
+        
         [self setupUI];
     });
-}
-
-- (void)didFailDownload
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self setupUI];
-    });
-}
-
-- (void)gotFileSize:(NSString *)strFileSize
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        _lblFileSize.text = [self transformedValue:strFileSize];
-    });
-   
 }
 
 -(void)didHaveToWaitDownload
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        
-        _progressView.progress = _item.progress;
-        [_progressView downloadPaused];
+
     });
 }
 
@@ -76,36 +73,47 @@
 #pragma mark - Methods
 - (void)setupUI
 {
-    if ([_item isDownloading])
+    _lblFileName.textColor = [UIColor blackColor];
+    _lblFileName.text = _item.strFileName;
+    _lblFileCreated.text = _item.strFileCreatedDate;
+    _lblFileSize.text = _item.strFileSize;
+    
+    if (_item.progress>0)
     {
-        if (_item.progress == 0)
-            [_progressView startSpinProgressBackgroundLayer];
-        else if (_item.progress > 0)
-            [_progressView stopSpinProgressBackgroundLayer];
-            
-        _lblFileName.text = [NSString stringWithFormat:@"%@", _item.strFileName];
         
-        _progressView.isDownloadPaused = NO;
-    }
-    else if ([_item isDownloaded])
-    {
-        _lblFileName.text = [NSString stringWithFormat:@"%@", _item.strFileName];
+        if (_item.progress == 1.0)
+        {
+            self.btnStatus.hidden = YES;
+            
+            [UIView animateWithDuration:0.1 animations:^{
+                CGFloat width = 0;
+                CGRect rect = self.lblProgress.frame;
+                rect.size.width = width;
+                [self.lblProgress setFrame:rect];
+            }];
+        }
+        else
+        {
+            self.btnStatus.hidden = NO;
+            
+            [UIView animateWithDuration:0.1 animations:^{
+                CGFloat width = (self.contentView.frame.size.width*_item.progress)/1.f;
+                CGRect rect = self.lblProgress.frame;
+                rect.size.width = width;
+                [self.lblProgress setFrame:rect];
+            }];
+        }
     }
     else
     {
-        // Not downloaded, not downloading (initial state)
-        _lblFileName.textColor = [UIColor blackColor];
-        _lblFileName.text = _item.strFileName;
-        _lblFileCreated.text = _item.strFileCreatedDate;
-        _lblFileSize.text = _item.strFileSize;
+        self.btnStatus.hidden = YES;
         
-        if ([_item isDownloadedQueued])
-        {
-            _progressView.isDownloadPaused = YES;
-        }
+        [UIView animateWithDuration:0.1 animations:^{
+            CGRect rect = self.lblProgress.frame;
+            rect.size.width = 0;
+            [self.lblProgress setFrame:rect];
+        }];
     }
-    
-    _progressView.progress = _item.progress;
 
 }
 
@@ -121,7 +129,6 @@
 
 -(NSString *)transformedValue:(id)value
 {
-    
     double convertedValue = [value doubleValue];
     int multiplyFactor = 0;
     
@@ -136,27 +143,50 @@
 }
 
 #pragma mark -
+#pragma mark - Action Method
+
+-(IBAction)btnStatusAction:(id)sender
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        if (!self.btnStatus.selected)
+        {
+            [self.btnStatus setImage:[UIImage imageNamed:@"refresh"] forState:UIControlStateNormal];
+            [self.item.request cancel];
+        }
+        else
+        {
+            [self.btnStatus setImage:[UIImage imageNamed:@"cancel"] forState:UIControlStateNormal];
+            [self.item downloadItem];
+        }
+        
+        self.btnStatus.selected = !self.btnStatus.selected;
+        
+    });
+}
+
+#pragma mark -
 #pragma mark - gesture methods
 
-- (void)tapGestureSelector:(UITapGestureRecognizer *)recognizer
-{
-    if (_item.isDownloading)
-    {
-        //NSLog(@"%@",_item.downloadTask);
-        if(_item.downloadTask.state == NSURLSessionTaskStateRunning)
-        {
-            [_progressView downloadPaused];
-            
-            [_item.downloadTask suspend];
-        }
-        else if(_item.downloadTask.state == NSURLSessionTaskStateSuspended)
-        {
-            [_progressView downloadStarted];
-            
-            [_item.downloadTask resume];
-        }
-    }
-}
+//- (void)tapGestureSelector:(UITapGestureRecognizer *)recognizer
+//{
+//    if (_item.isDownloading)
+//    {
+//        //NSLog(@"%@",_item.downloadTask);
+//        if([_item.request downloadStatus] == NSURLSessionTaskStateRunning)
+//        {
+//            //[_progressView downloadPaused];
+//            
+//            [_item.request pause];
+//        }
+//        else if([_item.request downloadStatus] == NSURLSessionTaskStateSuspended)
+//        {
+//            //[_progressView downloadStarted];
+//            
+//            [_item.request resume];
+//        }
+//    }
+//}
 
 
 @end

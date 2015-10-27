@@ -7,14 +7,14 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "STHTTPRequest.h"
 
 @protocol ItemDownloadDelegate <NSObject>
 
-- (void)didStartDownloading;
-- (void)gotFileSize:(NSString *)strFileSize;
-- (void)didUpdateProgress:(CGFloat)progress;
-- (void)didFinishDownload;
-- (void)didFailDownload;
+-(void)didStartDownloading;
+-(void)didUpdateProgress:(CGFloat)progress;
+-(void)didFinishDownload;
+-(void)didFailDownload;
 -(void)didHaveToWaitDownload;
 
 @end
@@ -28,6 +28,7 @@
 @property (nonatomic, strong) NSURL *fileDownloadedPathURL;
 
 @property (nonatomic, strong) NSURLSessionDownloadTask *downloadTask;
+@property (nonatomic, strong) STHTTPRequest *request;
 @property (nonatomic, strong) id<ItemDownloadDelegate> delegate;
 
 - (BOOL)isDownloading;

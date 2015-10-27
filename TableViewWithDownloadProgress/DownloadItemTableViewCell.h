@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import "DownloadItem.h"
-#import "FFCircularProgressView.h"
 
 @interface DownloadItemTableViewCell : UITableViewCell
 //{
@@ -20,7 +19,9 @@
 @property (strong, nonatomic) IBOutlet UILabel *lblFileName;
 @property (strong, nonatomic) IBOutlet UILabel *lblFileCreated;
 @property (strong, nonatomic) IBOutlet UILabel *lblFileSize;
-@property (strong, nonatomic) IBOutlet FFCircularProgressView *progressView;
-
+@property (strong, nonatomic) IBOutlet UILabel *lblProgress;
+@property (strong, nonatomic) IBOutlet UIButton *btnStatus;
 @property (nonatomic, strong) DownloadItem *item;
+
+-(IBAction)btnStatusAction:(id)sender;
 @end
